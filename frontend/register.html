@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Register</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="login-box">
+  <h2>Register</h2>
+
+  <form id="registerForm">
+
+    <input type="text" id="username" placeholder="Username">
+    <small id="userError"></small>
+
+    <input type="email" id="email" placeholder="Email">
+    <small id="emailError"></small>
+
+    <input type="password" id="password" placeholder="Password">
+    <small id="passError"></small>
+
+    <input type="password" id="confirmPassword" placeholder="Confirm Password">
+    <small id="confirmError"></small>
+
+    <button type="submit">Register</button>
+  </form>
+
+  <!-- Redirect to Login -->
+  <button class="link-btn" onclick="goToLogin()">Already have an account? Login</button>
+
+  <h3> </h3>
+  <pre id="responseBox"></pre>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="register.js"></script>
+</body>
+</html>

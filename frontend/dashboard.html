@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+  <style>
+    table { border-collapse: collapse; width: 70%; }
+    th, td { border: 1px solid #ccc; padding: 8px; }
+    th { background: #f2f2f2; }
+    input { width: 95%; }
+  </style>
+</head>
+<body>
+
+  <h2>User Dashboard</h2>
+
+  <table id="userTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Email</th>
+        <th>Username</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- rows added by JS -->
+    </tbody>
+  </table>
+
+  <br />
+  <button onclick="logout()">Logout</button>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>
