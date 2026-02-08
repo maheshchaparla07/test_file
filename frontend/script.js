@@ -1,3 +1,21 @@
+// Cookie utility functions
+function setCookie(name, value, minutes) {
+  const expires = new Date(Date.now() + minutes * 60000).toUTCString();
+  document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Strict`;
+}
+
+function getCookie(name) {
+  const value = document.cookie
+    .split("; ")
+    .find(row => row.startsWith(name + "="))
+    ?.split("=")[1];
+  return value || null;
+}
+
+function deleteCookie(name) {
+  document.cookie = `${name}=; Max-Age=0; path=/`;
+}
+
 document.getElementById("loginForm").addEventListener("submit", async function (e) {
   e.preventDefault();
 
@@ -13,16 +31,15 @@ document.getElementById("loginForm").addEventListener("submit", async function (
       })
     );
 
-    // ✅ STORE JWT HERE (this is the correct place)
-    const token = res.data.access_token;
-    localStorage.setItem("authorization", token);
-    localStorage.setItem("refresh_token", res.data.refresh_token);
+    // Store tokens in cookies
+    setCookie("access_token", res.data.access_token, 15);   // 15 minutes
+    setCookie("refresh_token", res.data.refresh_token, 10080); // 7 days
 
-    console.log("JWT stored:", token);
+    console.log("JWT stored in cookies");
 
     alert("Login successful!");
 
-    // ✅ Redirect after storing token
+    // Redirect after storing token
     window.location.href = "dashboard.html";
 
   } catch (error) {

@@ -1,4 +1,22 @@
-const token = localStorage.getItem("authorization");
+// Cookie utility functions
+function setCookie(name, value, minutes) {
+  const expires = new Date(Date.now() + minutes * 60000).toUTCString();
+  document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Strict`;
+}
+
+function getCookie(name) {
+  const value = document.cookie
+    .split("; ")
+    .find(row => row.startsWith(name + "="))
+    ?.split("=")[1];
+  return value || null;
+}
+
+function deleteCookie(name) {
+  document.cookie = `${name}=; Max-Age=0; path=/`;
+}
+
+let token = getCookie("access_token");
 
 console.log("Dashboard token:", token);
 // protect dashboard
@@ -7,6 +25,63 @@ if (!token) {
 }
 
 const API_URL = "http://127.0.0.1:8000";
+
+// Refresh token function
+async function refreshAccessToken() {
+  const refreshToken = getCookie("refresh_token");
+  
+  console.log("🔄 Attempting to refresh token...");
+  console.log("Refresh token:", refreshToken ? "exists" : "missing");
+  
+  if (!refreshToken) {
+    console.log("❌ No refresh token available");
+    logout();
+    return null;
+  }
+
+  try {
+    console.log("📡 Calling /refresh endpoint...");
+    const res = await axios.post(`${API_URL}/refresh`, {
+      refresh_token: refreshToken
+    });
+
+    const newAccessToken = res.data.access_token;
+    setCookie("access_token", newAccessToken, 15); // 15 minutes
+    token = newAccessToken; // update the global token variable
+    console.log("✅ Token refreshed successfully!");
+    console.log("New access token:", newAccessToken.substring(0, 20) + "...");
+    return newAccessToken;
+  } catch (error) {
+    console.error("❌ Token refresh failed:", error.response?.data || error.message);
+    logout();
+    return null;
+  }
+}
+
+// Axios interceptor to handle 401 errors and refresh token
+axios.interceptors.response.use(
+  response => response,
+  async error => {
+    const originalRequest = error.config;
+
+    // If 401 and not already retrying
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      console.log("⚠️ 401 Error detected - Token expired!");
+      originalRequest._retry = true;
+
+      const newToken = await refreshAccessToken();
+      
+      if (newToken) {
+        console.log("🔁 Retrying original request with new token...");
+        // Update the authorization header with new token
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return axios(originalRequest);
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 loadUsers();
 
@@ -99,7 +174,36 @@ function toggleEdit(userId, isEdit) {
 
 // logout
 function logout() {
-  localStorage.removeItem("token");
-  window.location.href = "index.html"; 
-  
+  deleteCookie("access_token");
+  deleteCookie("refresh_token");
+  window.location.href = "index.html";
 }
+
+
+// Test function to manually trigger refresh token
+async function testRefreshToken() {
+  const output = document.getElementById("testOutput");
+  output.innerHTML = "<h3>🧪 Testing Refresh Token...</h3>";
+  
+  console.log("=== MANUAL REFRESH TOKEN TEST ===");
+  
+  // Show current tokens
+  const currentAccess = getCookie("access_token");
+  const currentRefresh = getCookie("refresh_token");
+  
+  output.innerHTML += `<p><strong>Current Access Token:</strong> ${currentAccess ? currentAccess.substring(0, 30) + "..." : "None"}</p>`;
+  output.innerHTML += `<p><strong>Current Refresh Token:</strong> ${currentRefresh ? currentRefresh.substring(0, 30) + "..." : "None"}</p>`;
+  
+  // Call refresh
+  output.innerHTML += "<p>🔄 Calling refresh endpoint...</p>";
+  const newToken = await refreshAccessToken();
+  
+  if (newToken) {
+    output.innerHTML += `<p style="color: green;"><strong>✅ SUCCESS!</strong></p>`;
+    output.innerHTML += `<p><strong>New Access Token:</strong> ${newToken.substring(0, 30)}...</p>`;
+    output.innerHTML += "<p>Check console for detailed logs</p>";
+  } else {
+    output.innerHTML += `<p style="color: red;"><strong>❌ FAILED!</strong> Check console for errors</p>`;
+  }
+}
+
